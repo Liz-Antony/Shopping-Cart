@@ -1,27 +1,28 @@
 const { MongoClient } = require('mongodb');
+
+const uri = 'mongodb://localhost:27017';
+const client = new MongoClient(uri);
 let db = null;
 
-async function connectToDatabase() {
-    if (db) return db;  // If already connected, return the existing connection
-
+async function connect() {
     try {
-        const uri = 'mongodb://localhost:27017';
-        const client = new MongoClient(uri);
-
-        await client.connect();  // Wait for the connection
+        await client.connect();
+        db = client.db('shopping'); // Connect once and store db
         console.log('Connected to MongoDB');
-        
-        db = client.db('shopping');  // Set the db object when connected
-        console.log('Using database: shopping');
-        return db;  // Return the db object when connection is successful
-
     } catch (error) {
-        console.error('Error connecting to MongoDB:', error);
-        throw error;  // Throw error if connection fails
+        console.error('Database connection failed:', error);
+        throw error;
     }
 }
 
-module.exports = { connectToDatabase };
+function get() {
+    if (!db) {
+        throw new Error('Database not connected');
+    }
+    return db;
+}
+
+module.exports = { connect, get };
 
 
 

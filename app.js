@@ -8,8 +8,8 @@ var userRouter = require('./routes/user');
 var adminRouter = require('./routes/admin');
 var app = express();
 var fileUpload = require('express-fileupload');
-var { connectToDatabase } = require('./config/connection'); // Import connectToDatabase from config
-
+const db = require('./config/connection'); // Import connect from config
+var session=require('express-session')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
@@ -29,15 +29,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(fileUpload());
+app.use(session({secret:"Key",cookie:{maxAge:600000}}))
 
-// Connect to the database using the config file
-connectToDatabase()
-  .then(() => {
-    console.log('Database connected successfully');
-  })
-  .catch((err) => {
-    console.log('Failed to connect to the database:', err);
-  });
+db.connect()
+  .then(() => console.log('Database connected successfully'))
+  .catch((err) => console.error('Failed to connect:', err));
 
 // Routes setup
 app.use('/', userRouter);
