@@ -1,0 +1,29 @@
+<section>
+    <div class="container">
+        <table class="table mt-5">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Title</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each products}}
+                <tr>
+                    <td><img style="width: 70px;height:70px" src="/product-images/{{this._id}}.jpg"></td>
+                    <td>{{this.name}}</td>
+
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary">-</button>1
+                        <button class="btn btn-sm btn-outline-secondary">+</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger btn-sm">Remove</button>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</section>
