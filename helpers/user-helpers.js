@@ -55,32 +55,51 @@ module.exports = {
         });
     },
     addToCart: (proId, userId) => {
-
+        let proObj = {
+            item: new ObjectId(proId),
+            quantity: 1
+        };
+    
         return new Promise(async (resolve, reject) => {
-            const database = db.get()
-            let userCart = await database.collection(collection.CART_COLLECTION).findOne({ user: new ObjectId(userId), })
-            if (userCart) {
-                
-               
-                // If cart exists, update it
-                 database.collection(collection.CART_COLLECTION)
-                     .updateOne(
-                         { user: new ObjectId(userId) },
-                         { $push: { products: new ObjectId(proId) } }
- 
-                     )
-                     .then((response) => resolve());
-
-            } else {
-                let cartObj = {
-                    user: new ObjectId(userId),
-                    products: [new ObjectId(proId)]
+            try {
+                const database = db.get();
+                let userCart = await database.collection(collection.CART_COLLECTION)
+                    .findOne({ user: new ObjectId(userId) });
+    
+                if (userCart && userCart.products) {
+                    let proExist = userCart.products.findIndex(product => 
+                        product.item && product.item.equals(new ObjectId(proId)) // ✅ Check if `item` exists
+                    );
+    
+                    if (proExist !== -1) {
+                        // If product exists, increment quantity
+                        await database.collection(collection.CART_COLLECTION)
+                            .updateOne(
+                                { user: new ObjectId(userId), 'products.item': new ObjectId(proId) },
+                                { $inc: { 'products.$.quantity': 1 } }
+                            );
+                    } else {
+                        // If product does not exist, push new product
+                        await database.collection(collection.CART_COLLECTION)
+                            .updateOne(
+                                { user: new ObjectId(userId) },
+                                { $push: { products: proObj } }
+                            );
+                    }
+                } else {
+                    // If userCart doesn't exist, create a new cart
+                    let cartObj = {
+                        user: new ObjectId(userId),
+                        products: [proObj]
+                    };
+                    await database.collection(collection.CART_COLLECTION)
+                        .insertOne(cartObj);
                 }
-                database.collection(collection.CART_COLLECTION).insertOne(cartObj).then((response) => {
-                    resolve()
-                })
+                resolve();
+            } catch (error) {
+                reject(error);
             }
-        })
+        });
     },
 
     getCartProducts: (userId) => {
@@ -90,22 +109,31 @@ module.exports = {
                     $match: { user: new ObjectId(userId) }
                 },
                 {
-                    $lookup: {
-                        from: collection.PRODUCT_COLLECTION,
-                        let: { proList: '$products' },
-                        pipeline: [{
-                            $match: {
-                                $expr: {
-                                    $in: ['$_id', "$$proList"]
-                                }
-                            }
-                        }],
-                        as: 'cartItems'
+                    $unwind:'$products'
+                },
+                {
+                    $project:{
+                        item:'$products.item',
+                        quantity:'$products.quantity'
+                    }
+                },
+                {
+                    $lookup:{
+                        from:collection.PRODUCT_COLLECTION,
+                        localField:'item',
+                        foreignField:'_id',
+                        as:'product'
+                    }
+                },
+                {
+                    $project:{
+                        item:1,quantity:1,product:{$arrayElemAt:['$product',0]}
                     }
                 }
+
+
             ]).toArray();
-            console.log("Cart items retrieved:", cartItems[0].cartItems);
-            resolve(cartItems[0].cartItems)
+            resolve(cartItems)
         })
     },
 
@@ -118,6 +146,21 @@ module.exports = {
             }
             resolve(count)
         })
+    },
+
+    changeProductQuantity:(details)=>{
+        details.count=parseInt(details.count)
+    
+         return new Promise((resolve,reject)=>{
+            db.get().collection(collection.CART_COLLECTION)
+            .updateOne({_id:new ObjectId(details.cart),'products.item':new ObjectId(details.product)},
+            {
+                $inc:{'products.$.quantity':details.count}
+            }).then((response)=>{
+                console.log(response)
+                resolve(response)
+            })
+         })
     }
 
 

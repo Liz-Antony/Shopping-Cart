@@ -87,7 +87,14 @@ router.get('/add-to-cart/:id', async (req, res) => {
   })
  
   
-});
+})
+
+router.post('/change-product-quantity',async(req,res,next)=>{
+  console.log(req.body)
+  const response= await userHelpers.changeProductQuantity(req.body).then((response)=>{
+
+  })
+})
 
 
 module.exports = router;
