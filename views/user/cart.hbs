@@ -10,13 +10,15 @@
             </thead>
             <tbody>
                 {{#each products}}
-                <tr>
-                    <td><img style="width: 70px;height:70px" src="/product-images/{{this.product._id}}.jpg"></td>
-                    <td>{{this.product.name}}</td>
-
+                <tr data-product-id="{{this.product._id}}">
                     <td>
-                        <button class="btn btn-sm btn-outline-secondary" onclick='changeQuantity("{{this._id}}","{{this.product._id}}",-1)'>-</button>{{this.quantity}}
-                        <button class="btn btn-sm btn-outline-secondary" onclick='changeQuantity("{{this._id}}","{{this.product._id}}",1)'>+</button>
+                        <img style="width: 70px; height: 70px" src="/product-images/{{this.product._id}}.jpg" alt="{{this.product.name}}">
+                    </td>
+                    <td>{{this.product.name}}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="changeQuantity('{{this._id}}', '{{this.product._id}}', -1)">-</button>
+                        <span class="quantity">{{this.quantity}}</span>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="changeQuantity('{{this._id}}', '{{this.product._id}}', 1)">+</button>
                     </td>
                     <td>
                         <button class="btn btn-danger btn-sm">Remove</button>
@@ -26,21 +28,51 @@
             </tbody>
         </table>
     </div>
-</section>   
+</section>
+
+
 
 <script>
-    function changeQuantity(cartId,proId,count){
-        $.ajax({
-            url:'/change-product-quantity',
-            data:{ cart:cartId,
-            product:proId,
-            count:count
+    function changeQuantity(cartId, proId, count) {
+    $.ajax({
+        url: '/change-product-quantity',
+        data: {
+            cart: cartId,
+            product: proId,
+            count: count
+        },
+        method: 'POST',
+        success: (response) => {
+            if (response.success) {
+                // Find the quantity element for the product and update it
+                const quantityElement = $(`tr[data-product-id="${proId}"] .quantity`);
+                let currentQuantity = parseInt(quantityElement.text());
+                currentQuantity += count;  // Increment or decrement based on the count
 
-            },
-            method:'post',
-            success:(response)=>{
-                alert(response)
+                // Update the displayed quantity
+                if (currentQuantity >= 1) { // Ensure quantity doesn't go below 1
+                    quantityElement.text(currentQuantity);
+                }
+
+                // Enable or disable the buttons based on the quantity
+                const decrementButton = $(`tr[data-product-id="${proId}"] button:contains("-")`);
+                const incrementButton = $(`tr[data-product-id="${proId}"] button:contains("+")`);
+
+                if (currentQuantity <= 1) {
+                    decrementButton.prop('disabled', true);  // Disable "-" button if quantity is 1
+                } else {
+                    decrementButton.prop('disabled', false); // Enable "-" button if quantity is greater than 1
+                }
+
+                if (currentQuantity >= 1) {
+                    incrementButton.prop('disabled', false);  // Always enable "+" button
+                }
             }
-        })
-    }
+        },
+        error: (error) => {
+            console.log('Error:', error.responseText); // Optionally log any errors
+        }
+    });
+}
+
 </script>

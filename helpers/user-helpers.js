@@ -148,21 +148,36 @@ module.exports = {
         })
     },
 
-    changeProductQuantity:(details)=>{
-        details.count=parseInt(details.count)
+    changeProductQuantity: (details) => {
+        details.count = parseInt(details.count);
     
-         return new Promise((resolve,reject)=>{
+        return new Promise((resolve, reject) => {
             db.get().collection(collection.CART_COLLECTION)
-            .updateOne({_id:new ObjectId(details.cart),'products.item':new ObjectId(details.product)},
-            {
-                $inc:{'products.$.quantity':details.count}
-            }).then((response)=>{
-                console.log(response)
-                resolve(response)
-            })
-         })
+                .updateOne(
+                    { _id: new ObjectId(details.cart), 'products.item': new ObjectId(details.product) },
+                    {
+                        $inc: { 'products.$.quantity': details.count }
+                    }
+                ).then((response) => {
+                    // Ensure the updated quantity doesn't go below 1
+                    db.get().collection(collection.CART_COLLECTION)
+                        .findOne({ _id: new ObjectId(details.cart) })
+                        .then((cart) => {
+                            const product = cart.products.find(p => p.item.equals(new ObjectId(details.product)));
+                            if (product && product.quantity < 1) {
+                                // Reset to 1 if it goes below 1
+                                db.get().collection(collection.CART_COLLECTION)
+                                    .updateOne(
+                                        { _id: new ObjectId(details.cart), 'products.item': new ObjectId(details.product) },
+                                        { $set: { 'products.$.quantity': 1 } }
+                                    );
+                            }
+                            resolve(response);
+                        });
+                }).catch((err) => reject(err));
+        });
     }
-
+    
 
 
 }

@@ -89,12 +89,20 @@ router.get('/add-to-cart/:id', async (req, res) => {
   
 })
 
-router.post('/change-product-quantity',async(req,res,next)=>{
-  console.log(req.body)
-  const response= await userHelpers.changeProductQuantity(req.body).then((response)=>{
+router.post('/change-product-quantity', async (req, res, next) => {
+  console.log(req.body); // Logging the request body for debugging
 
-  })
-})
+  try {
+      const response = await userHelpers.changeProductQuantity(req.body);
+
+      // Respond with success status and optional response from the database
+      res.json({ success: true, message: "Quantity updated successfully" });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 
 module.exports = router;
