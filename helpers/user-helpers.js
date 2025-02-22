@@ -74,7 +74,7 @@ module.exports = {
             } else {
                 let cartObj = {
                     user: new ObjectId(userId),
-                    products: [new ObjectId[proId]]
+                    products: [new ObjectId(proId)]
                 }
                 database.collection(collection.CART_COLLECTION).insertOne(cartObj).then((response) => {
                     resolve()
