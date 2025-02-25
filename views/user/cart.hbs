@@ -5,74 +5,104 @@
                 <tr>
                     <th>Item</th>
                     <th>Title</th>
+                    <th>Price</th>
                     <th>Quantity</th>
                 </tr>
             </thead>
             <tbody>
                 {{#each products}}
-                <tr data-product-id="{{this.product._id}}">
+                <tr> <!-- Missing <tr> added -->
                     <td>
-                        <img style="width: 70px; height: 70px" src="/product-images/{{this.product._id}}.jpg" alt="{{this.product.name}}">
+                        <img style="width: 50px; height: 50px" src="/product-images/{{this.product._id}}.jpg"
+                            alt="{{this.product.name}}">
                     </td>
                     <td>{{this.product.name}}</td>
+                    <td>{{this.product.price}}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="changeQuantity('{{this._id}}', '{{this.product._id}}', -1)">-</button>
-                        <span class="quantity">{{this.quantity}}</span>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="changeQuantity('{{this._id}}', '{{this.product._id}}', 1)">+</button>
+                        <button class="btn btn-sm btn-outline-secondary"
+                            onclick="changeQuantity('{{this._id}}', '{{this.product._id}}','{{../user}}', -1)">-</button>
+                        <span id="{{this.product._id}}">{{this.quantity}}</span>
+                        <button class="btn btn-sm btn-outline-secondary"
+                            onclick="changeQuantity('{{this._id}}', '{{this.product._id}}','{{../user}}',1)">+</button>
                     </td>
                     <td>
-                        <button class="btn btn-danger btn-sm">Remove</button>
+                        <button class="btn btn-danger btn-sm"
+                            onclick="removeItem('{{this._id}}', '{{this.product._id}}')">Remove</button>
                     </td>
                 </tr>
                 {{/each}}
             </tbody>
         </table>
+
+        <hr>
+        <div class="d-flex flex-column align-items-end">
+            <h3 class="mr-4 mr-5">Total: CAD.<span id="total">{{totalValue}}</span></h3>
+            <a href="/place-order"
+                style="width:200px; height:50px; text-align:center; font-size:larger; font-weight:bolder"
+                class="btn btn-success mt-2 mr-5">Place Order</a>
+        </div>
+
     </div>
 </section>
 
-
-
 <script>
-    function changeQuantity(cartId, proId, count) {
+function changeQuantity(cartId, proId, userId, count) {
+    let quantity = parseInt(document.getElementById(proId).innerHTML);
+    count = parseInt(count);
+
     $.ajax({
-        url: '/change-product-quantity',
+        url: '/change-product-quantity', 
         data: {
+            user: userId,
             cart: cartId,
             product: proId,
-            count: count
-        },
-        method: 'POST',
+            count: count,
+            quantity: quantity
+        }, 
+        method: 'post', 
         success: (response) => {
-            if (response.success) {
-                // Find the quantity element for the product and update it
-                const quantityElement = $(`tr[data-product-id="${proId}"] .quantity`);
-                let currentQuantity = parseInt(quantityElement.text());
-                currentQuantity += count;  // Increment or decrement based on the count
-
-                // Update the displayed quantity
-                if (currentQuantity >= 1) { // Ensure quantity doesn't go below 1
-                    quantityElement.text(currentQuantity);
-                }
-
-                // Enable or disable the buttons based on the quantity
-                const decrementButton = $(`tr[data-product-id="${proId}"] button:contains("-")`);
-                const incrementButton = $(`tr[data-product-id="${proId}"] button:contains("+")`);
-
-                if (currentQuantity <= 1) {
-                    decrementButton.prop('disabled', true);  // Disable "-" button if quantity is 1
+            if (response.removeProduct) {
+                alert("Product Removed from cart");
+                // Reload the page to reflect the changes
+                location.reload();
+            } else {
+                quantity += count; // Update quantity before updating HTML
+                document.getElementById(proId).innerHTML = quantity;
+                document.getElementById('total').innerHTML = response.total;  // Update the total value
+                
+                // Disable "-" button if quantity is 1
+                if (quantity <= 1) {
+                    $(`button[onclick*="'${cartId}','${proId}',-1"]`).prop('disabled', true);
                 } else {
-                    decrementButton.prop('disabled', false); // Enable "-" button if quantity is greater than 1
-                }
-
-                if (currentQuantity >= 1) {
-                    incrementButton.prop('disabled', false);  // Always enable "+" button
+                    $(`button[onclick*="'${cartId}','${proId}',-1"]`).prop('disabled', false);
                 }
             }
+            
+            // Reload the page to reflect the updated total
+            location.reload();
         },
         error: (error) => {
-            console.log('Error:', error.responseText); // Optionally log any errors
+            console.log("Error:", error.responseText);
         }
     });
 }
 
+
+    function removeItem(cartId, proId) {
+        $.ajax({
+            url: "/remove-product",
+            method: "POST",
+            data: { cart: cartId, product: proId },
+            success: (response) => {
+                if (response.success) {
+                    // Remove the row without refreshing the page
+                    $(`#row-${proId}`).remove()
+                    location.reload()
+                }
+            },
+            error: (error) => {
+                console.log("Error:", error.responseText);
+            }
+        });
+    }
 </script>

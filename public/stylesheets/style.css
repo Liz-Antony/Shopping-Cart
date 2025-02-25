@@ -1,1 +1,23 @@
 
+.form-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.address-container {
+    width: 45%;
+}
+
+.order-summary {
+    width: 45%;
+    border: 1px solid #ccc;
+    padding: 20px;
+}
+
+.total-amount {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+}

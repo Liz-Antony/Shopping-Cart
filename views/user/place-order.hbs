@@ -1,0 +1,98 @@
+<style>
+    .form-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.address-container {
+    width: 45%;
+}
+
+.order-summary {
+    width: 45%;
+    border: 1px solid #ccc;
+    padding: 20px;
+}
+
+.total-amount {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+}
+
+</style>
+<section class="container">
+    <h2 class="mt-4">Place Your Order</h2>
+
+    <!-- Form Start -->
+    <form action="/place-order" method="POST" id="checkout-form">
+        <div class="form-container">
+            
+            <!-- Address Section -->
+            <div class="address-container">
+                <h4>Enter Delivery Address</h4>
+                <div class="mb-3">
+                    <label for="address" class="form-label">Address</label>
+                    <input type="text" class="form-control" id="address" name="address" placeholder="Enter your address" required>
+                </div>
+                <div class="mb-3">
+                    <label for="postal-code" class="form-label">Postal Code</label>
+                    <input type="text" class="form-control" id="postal-code" name="postalCode" placeholder="Enter postal code" required>
+                </div>
+                <div class="mb-3">
+                    <label for="mobile" class="form-label">Mobile Number</label>
+                    <input type="text" class="form-control" id="mobile" name="mobile" placeholder="Enter mobile number" required>
+                    <input type="text" name="user" id="" value="{{user._id}}" hidden >
+                </div>
+            </div>
+
+            <!-- Order Summary Section -->
+            <div class="order-summary">
+                <h5>Total Amount</h5>
+                <div class="total-amount" id="total-amount">
+                    <span>CAD {{total}}</span> <!-- You can dynamically update this -->
+                </div>
+
+                <h5>Payment Method</h5>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="cash-on-delivery" checked>
+                    <label class="form-check-label" for="cod">
+                        Cash on Delivery
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="online-payment">
+                    <label class="form-check-label" for="online">
+                        Online Payment
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-4">Checkout</button>
+            </div>
+
+        </div>
+    </form>
+    <!-- Form End -->
+</section>
+
+<script>
+    $("#checkout-form").submit((e)=>{
+        e.preventDefault()
+        $.ajax({
+            url:'/place-order',
+            method:'post',
+            data:$('#checkout-form').serialize(),
+            success:(response)=>{
+                console.log("Response printed from ajax"+response.status)
+                alert(response.status)
+                if(response.status){
+                    location.href='/orderDetails'
+                }
+                
+            }
+        })
+    })
+</script>
+

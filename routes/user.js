@@ -76,8 +76,9 @@ router.get('/logout',(req,res)=>{
 
 router.get('/cart',verifyLogin,async (req,res)=>{
   let products=await userHelpers.getCartProducts(req.session.user._id)
+  let totalValue=await userHelpers.getTotalAmount(req.session.user._id)
   console.log("Cart Products:", products);
-  res.render('user/cart',{products,user:req.session.user})
+  res.render('user/cart',{products,user:req.session.user,totalValue})
 })
 
 router.get('/add-to-cart/:id', async (req, res) => {
@@ -89,19 +90,83 @@ router.get('/add-to-cart/:id', async (req, res) => {
   
 })
 
-router.post('/change-product-quantity', async (req, res, next) => {
-  console.log(req.body); // Logging the request body for debugging
+router.post('/change-product-quantity', (req, res, next) => {
+ 
+    userHelpers.changeProductQuantity(req.body).then(async(response)=>{
+    let total=await userHelpers.getTotalAmount(req.body.user._id)
+   
+     res.json(total)
+   })
+   
+ })
 
+router.post('/remove-product', async (req, res) => {
   try {
-      const response = await userHelpers.changeProductQuantity(req.body);
-
-      // Respond with success status and optional response from the database
-      res.json({ success: true, message: "Quantity updated successfully" });
+      const response = await userHelpers.removeProduct(req.body);
+      res.json(response);
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, message: error.message });
+      console.error("Error removing product:", error);
+      res.status(500).json({ success: false, message: "Failed to remove product" });
   }
+})
+
+router.get('/place-order',verifyLogin,async(req,res)=>{
+  let total=await userHelpers.getTotalAmount(req.session.user._id)
+  console.log("User id available at get place order router"+req.session.user._id)
+  res.render('user/place-order',{total,user:req.session.user})
+
+})
+
+router.post('/place-order', async (req, res) => {
+  console.log(req.body);  // Add this to see the form data being sent
+  try {
+      let userId = req.body.user; 
+      console.log(userId)
+      // Ensure you're using the correct field for userId
+      let products = await userHelpers.getCartProductList(userId);
+      let totalPrice = await userHelpers.getTotalAmount(userId);
+
+      userHelpers.placeOrder(req.body,userId, products, totalPrice).then((response) => {
+        res.json({status:true})
+          
+      }).catch((error) => {
+          res.status(500).send("Error placing order: " + error);
+      });
+  } catch (error) {
+      console.error("Error getting cart products: ", error);
+      res.status(500).send("Cart not found or other error: " + error);
+  }
+})
+
+router.get('/orderDetails',(req,res)=>{
+  res.render('user/orderDetails',{user:req.session.user})
+})
+
+router.get('/view-order', async (req, res) => {
+  if (!req.session.user || !req.session.user._id) {
+      return res.redirect('/login'); // Redirect to login if no user session is found
+  }
+  let userId = req.session.user._id;
+  let orders = await userHelpers.getUserOrders(userId);
+  res.render('user/previous-orderList', { user: req.session.user, orders });
 });
+
+router.get('/view-order-products/:id',async(req,res)=>{
+  let products = await userHelpers.getOrderProducts(req.params.id)
+  console.log("Products printing before passing to be displayed"+products);  // Ensure this is an array
+
+  res.render('user/view-order-products',{user:req.session.user,products})
+})
+
+
+
+
+
+
+
+
+
+
 
 
 
